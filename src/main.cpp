@@ -22,6 +22,10 @@ struct Table_info {
     std::vector<std::pair<std::string, std::string>> attributes;
 };
 
+struct Table_val {
+    std::vector<std::string>values;
+};
+
 
 std::string trim(std::string s) {
     s.erase(0, s.find_first_not_of(" \t\n"));
@@ -97,6 +101,123 @@ Table_info  parse_create_table_query(const std::string & input){
 
 }
 
+// insert into marks values (1, "Alice", "Math");
+
+Table_val parse_insert_values_query(const std::string& input) {
+    Table_val tv;
+    
+    int id1 = -1, id2 = -1;
+
+    for (int i = 0; i < input.length(); i++) {
+        if (input[i] == '(') id1 = i;
+        if (input[i] == ')') id2 = i;
+    }
+
+    if (id1 == -1 || id2 == -1 || id2 <= id1) {
+        throw std::runtime_error("Invalid INSERT syntax");
+    }
+
+    std::string temp = input.substr(id1 + 1, id2 - id1 - 1);
+
+    std::stringstream ss(temp);
+    std::string token;
+
+    while (std::getline(ss, token, ',')) {
+        token = trim(token);
+
+        if (token.front() == '"' && token.back() == '"') {
+            token = token.substr(1, token.size() - 2);
+        }
+
+        tv.values.push_back(token);
+    }
+
+    // for (int i = 0; i < tv.values.size(); i++) {
+    //     std::cout << tv.values[i] << std::endl;
+    // }
+
+    return tv;
+}
+
+Table_info load_table_metadata(
+    const std::string& curr_database,
+    const std::string& table_name
+) {
+    fs::path meta_path =
+        fs::path("../data") / curr_database / table_name /
+        (table_name + ".meta.json");
+
+    if (!fs::exists(meta_path)) {
+        throw std::runtime_error("Table does not exist");
+    }
+
+    std::ifstream in(meta_path);
+    if (!in) {
+        throw std::runtime_error("Failed to open metadata");
+    }
+
+    json j;
+    in >> j;
+
+    Table_info ti;
+    ti.table_name = j["table"].get<std::string>();
+
+    for (const auto& col : j["columns"]) {
+        ti.attributes.emplace_back(
+            col["name"].get<std::string>(),
+            col["type"].get<std::string>()
+        );
+    }
+
+    return ti;
+}
+
+
+bool insert_values(
+    const std::string& curr_database,
+    const std::string& table_name,
+    const Table_val& tv
+){
+    if (curr_database.empty()) {
+        std::cerr << "No database selected\n";
+        return false;
+    }
+
+    Table_info ti;
+
+    try {
+        ti = load_table_metadata(curr_database,table_name);
+    }
+    catch (...) {
+        std::cout<<"load_table_metadata failed" << '\n';
+        return false;
+    }
+
+    if(tv.values.size() != ti.attributes.size()){
+        std::cout<<"Column count mismatch."<<std::endl;
+        return false;
+    }
+
+    fs::path bin_file = fs::path("../data") / curr_database / table_name / (table_name + ".bin") ;
+
+    std::ofstream out(bin_file,std::ios::binary | std::ios::app);
+    if(!out){
+        std::cerr << "Failed to open data bin file\n";
+        return false;
+    }
+
+    for(const auto& val : tv.values){
+        char buffer[256] = {0};
+        std::strncpy(buffer , val.c_str(),sizeof(buffer) -1);
+        out.write(buffer, sizeof(buffer));
+    }
+
+    return true;
+
+}
+
+
+
 
 bool create_database(const std::string& db_name) {
     fs::path db_path = fs::path("../data") / db_name;
@@ -135,51 +256,20 @@ bool database_exists(const std::string& db_name) {
     }
 }
 
-// bool create_table(const std::string& table_name){
-//     if (curr_database.empty()) {
-//         std::cerr << "No database selected. Use 'use <database>' first.\n";
-//         return false;
-//     }
+void print_help(){
+    std::cout
+    << std::left << std::setw(15) << ".exit"
+    << "Exit this program\n"
 
-//     fs::path table_dir = fs::path("../data") / curr_database / table_name;
+    << std::left << std::setw(15) << ".help"
+    << "Show this help message\n"
 
-//     if (fs::exists(table_dir)) {
-//         std::cerr << "Table already exists: " << table_name << '\n';
-//         return false;
-//     }
+    << std::left << std::setw(15) << ".databases"
+    << "List all databases\n"
 
-//     try {
-//         fs::create_directories(table_dir);
-
-//         fs::path meta_file = table_dir / (table_name + ".meta.json");
-//         std::ofstream meta(meta_file);
-//         if (!meta) throw std::runtime_error("Failed to create meta file");
-
-//         meta << "{\n"
-//              << "  \"table\": \"" << table_name << "\",\n"
-//              << "  \"columns\": []\n"
-//              << "}\n";
-//         meta.close();
-
-//         fs::path data_file = table_dir / (table_name + ".bin");
-//         std::ofstream data(data_file, std::ios::binary);
-//         if (!data) throw std::runtime_error("Failed to create data file");
-
-//         data.close();
-
-//         std::cout << "Table created: " << table_name << '\n';
-//         return true;
-//     }
-//     catch (const std::exception& e) {
-//         fs::remove_all(table_dir); // rollback
-//         std::cerr << "Create table failed: " << e.what() << '\n';
-//         return false;
-//     }
-// }
-
-
-
-
+    << std::left << std::setw(15) << ".tables"
+    << "List tables in the current database\n";
+}
 
 
 int main(){
@@ -207,14 +297,56 @@ int main(){
         if (cmd[0] == '.') {
             if (cmd == ".exit") break;
 
-            if (cmd == ".help") {
-                std::cout << std::left << std::setw(15) << ".exit" << std::left << std::setw(10) <<"Exit this program with return-code CODE"<< std::endl;
+            else if (cmd == ".help") {
+                print_help();
+            }
+
+            else if(cmd == ".databases"){
+                fs::path db_path = fs::path("../data");
+                
+                for (const auto& dir_entry  : std::filesystem::directory_iterator(db_path)) {
+                    
+                    if (dir_entry.is_directory()) {
+                        std::cout << dir_entry.path().filename().string() << '\n';
+                    } 
+            
+                }                
+   
+            }
+
+            else if(cmd == ".tables"){
+                if (curr_database.empty()) {
+                    std::cerr << "No database selected. Use 'use <database>' first.\n";
+                    continue;
+                }
+
+                fs::path db_path = fs::path("../data")/curr_database;
+
+                if (!fs::exists(db_path)) {
+                    std::cerr << "Database directory not found on disk.\n";
+                    continue;
+                }
+                
+                bool found = false;
+
+                for (const auto& dir_entry  : std::filesystem::directory_iterator(db_path)) {
+                    
+                    if (dir_entry.is_directory()) {
+                        std::cout << dir_entry.path().filename().string() << '\n';
+                        found = true;
+                    } 
+            
+                }     
+                
+                if(!found){
+                    std::cout<<"no tables"<<std::endl;
+                }
             }
             continue;
         }
 
         // SQL COMMANDS
-        if (cmd == "create" && args.size() >= 3) {
+        else if (cmd == "create" && args.size() >= 3) {
             if (args[1] == "database") {
                 if (create_database(args[2])) {
                     std::cout << "Database created : "<<args[2]<<'\n';
@@ -230,7 +362,19 @@ int main(){
 
                 create_table(curr_database, ti.table_name, ti.attributes);
             }
+
+            else {
+                std::cerr << "Unknown create command\n";
+            }
+
         } 
+
+        else if (cmd == "insert") {
+            std::cout << "[DEBUG] INSERT command detected\n";
+            Table_val tv = parse_insert_values_query(input);
+            insert_values(curr_database, args[2], tv);
+        }
+
         
         else if (cmd == "drop" && args.size() >= 3 && args[1] == "database") {
             if (drop_database(args[2])) {
@@ -243,13 +387,15 @@ int main(){
         else if(cmd == "use" && args.size() >=2 ){
             if(database_exists(args[1])){
                 curr_database = args[1];
-                std::cout << "Using database '" << curr_database << "'\n";
+                std::cout << "Using database :  '" << curr_database << "'\n";
             }
             else if(!database_exists(args[1])){
                 std::cerr << "Database does not exist: " << args[1] << '\n';
             }
             
         }
+
+
 
         
         

@@ -132,9 +132,7 @@ Table_val parse_insert_values_query(const std::string& input) {
         tv.values.push_back(token);
     }
 
-    // for (int i = 0; i < tv.values.size(); i++) {
-    //     std::cout << tv.values[i] << std::endl;
-    // }
+
 
     return tv;
 }

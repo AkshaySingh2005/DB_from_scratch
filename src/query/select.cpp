@@ -2,11 +2,13 @@
 #include "../core/db_context.h"
 #include "../parser/parser.h"
 #include "../core/metadata.h"
+#include "../core/row_reader.h"
 #include <iostream>
 #include <unordered_set>
 
 
 void execute_select(const std::string& sql) {
+
     if(db_ctx.current_database.empty()){
         std::cerr << "No database selected\n";
         return;
@@ -22,8 +24,8 @@ void execute_select(const std::string& sql) {
         return;
     }
 
+    // load metadata
     Table_info ti;
-
     try{
         ti = load_table_metadata(db_ctx.current_database,sq.table_name);
     }
@@ -31,27 +33,45 @@ void execute_select(const std::string& sql) {
         std::cerr << e.what() << '\n';
         return;
     }
+
+    std::vector<size_t> col_indexes;
     
-    std::unordered_set<std::string>valid_cols;
+    // SELECT *
 
-    for(const auto& [name,type] : ti.attributes){
-        valid_cols.insert(name);
+    if (sq.columns.size() == 1 && sq.columns[0] == "*") {
+        for (size_t i = 0; i < ti.attributes.size(); i++) {
+            col_indexes.push_back(i);
+        }
     }
+    // SELECT col1, col2
 
+    else {
+        for (const auto& col : sq.columns) {
+            bool found = false;
 
-    if(sq.columns.size() == 1 && sq.columns[0] == "*"){
-        std::cout<<"Selecting all columns"<<std::endl;
-        // show data from bin all columns
-        return;
-    }
+            for (size_t i = 0; i < ti.attributes.size(); i++) {
+                if (ti.attributes[i].first == col) {
+                    col_indexes.push_back(i);
+                    found = true;
+                    break;   
+                }
+            }
 
-    for(const auto& col : sq.columns){
-        if(valid_cols.find(col) == valid_cols.end()){
-            std::cerr << "Unknown column '" << col << "'\n";
-            return;
+            if (!found) {
+                std::cerr << "Unknown column '" << col << "'\n";
+                return;
+            }
         }
     }
 
-    std::cout << "Columns verified successfully\n";
+    
+    auto rows = read_all_rows(db_ctx.current_database, ti);
 
+  
+    for (const auto& row : rows) {
+        for (size_t idx : col_indexes) {
+            std::cout << row.values[idx] << " ";
+        }
+        std::cout << '\n';
+    }
 }

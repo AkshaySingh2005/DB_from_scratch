@@ -1,6 +1,8 @@
 #include "parser.h"
 #include <sstream>
 #include <algorithm>
+#include <iterator>
+#include <vector>
 
 std::string trim(const std::string& s) {
     size_t start = s.find_first_not_of(" \t");
@@ -53,3 +55,53 @@ Table_val parse_insert_values_query(const std::string& input) {
     }
     return tv;
 }
+
+
+// select * from exam ;
+// select id,class from exam ;
+
+SelectQuery parse_select_query(const std::string &input){
+    SelectQuery sq;
+
+    auto v = parse_args(input);
+
+    int id1 = -1 , id2 = -1;
+
+    for(int i=0;i<v.size();i++){
+        if(v[i] == "select") id1 = i;
+        if(v[i] == "from") id2 = i;
+    }
+
+    if(id1 == -1 || id2 == -1 || id2 <= id1){
+        throw std::runtime_error("Invalid SELECT syntax");
+    }
+
+    sq.table_name = v[id2 + 1];
+    if(!sq.table_name.empty() && sq.table_name.back() == ';'){
+        sq.table_name.pop_back();
+    }
+    
+    std::string cols;
+    for(int i = id1+1 ; i<id2 ; i++){
+        cols+=v[i];
+    }
+
+    if(cols == "*"){
+        sq.columns.push_back("*");
+        return sq;
+    }
+
+    std::stringstream ss(cols);
+    std::string token;
+
+    while (std::getline(ss, token, ',')) {
+        token = trim(token);
+        sq.columns.push_back(token);
+    }
+
+    return sq;
+}
+
+
+
+

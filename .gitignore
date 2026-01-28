@@ -3,3 +3,5 @@ data
 .vscode
 build
 
+# Ignore everything in .vscode/
+.vscode/*

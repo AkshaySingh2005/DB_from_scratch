@@ -6,9 +6,7 @@
 #include <readline/history.h>
 
 #include "core/db_context.h"
-#include "parser/parser.h"
-#include "core/metadata.h"
-#include "core/storage.h"
+#include "query/query.h"
 
 namespace fs = std::filesystem;
 
@@ -44,22 +42,18 @@ int main() {
         std::string input(raw);
         free(raw);
 
-        auto args = parse_args(input);
-        if (args.empty()) continue;
-
-        const std::string& cmd = args[0];
 
         // DOT COMMANDS //
 
-        if (cmd[0] == '.') {
+        if (input[0] == '.') {
 
-            if (cmd == ".exit") break;
+            if (input == ".exit") break;
 
-            else if (cmd == ".help") {
+            else if (input == ".help") {
                 print_help();
             }
 
-            else if (cmd == ".databases") {
+            else if (input == ".databases") {
                 fs::path db_root = "../data";
 
                 if (!fs::exists(db_root)) {
@@ -74,7 +68,7 @@ int main() {
                 }
             }
 
-            else if (cmd == ".tables") {
+            else if (input == ".tables") {
                 if (db_ctx.current_database.empty()) {
                     std::cerr << "No database selected. Use 'use <database>' first.\n";
                     continue;
@@ -109,77 +103,25 @@ int main() {
 
         // SQL COMMANDS //
 
-        else if (cmd == "use" && args.size() >= 2) {
-            if (database_exists(args[1])) {
-                db_ctx.current_database = args[1];
-                std::cout << "Using database : '" << db_ctx.current_database << "'\n";
-            } else {
-                std::cerr << "Database does not exist: " << args[1] << '\n';
-            }
+        auto first_space = input.find(' ');
+        std::string cmd = (first_space == std::string::npos) ? input : input.substr(0, first_space);
+
+
+        if (cmd == "use") {
+            execute_use(input);
         }
-
-        else if (cmd == "create" && args.size() >= 3) {
-
-            if (args[1] == "database") {
-                if (create_database(args[2])) {
-                    std::cout << "Database created: " << args[2] << '\n';
-                } else {
-                    std::cerr << "Database already exists: " << args[2] << '\n';
-                }
-            }
-
-            else if (args[1] == "table") {
-                if (db_ctx.current_database.empty()) {
-                    std::cerr << "No database selected\n";
-                    continue;
-                }
-
-                Table_info ti = parse_create_table_query(input);
-                ti.table_name = args[2];
-
-                if (create_table(db_ctx.current_database, ti.table_name, ti.attributes)) {
-                    std::cout << "Table created: " << ti.table_name << '\n';
-                }
-            }
-
-            else {
-                std::cerr << "Unknown CREATE command\n";
-            }
+        else if (cmd == "create") {
+            execute_create(input);
         }
-
         else if (cmd == "insert") {
-
-            if (args.size() < 3 || args[1] != "into" || args[3] != "values" ) {
-                std::cerr << "Invalid INSERT syntax\n";
-                continue;
-            }
-
-            if (db_ctx.current_database.empty()) {
-                std::cerr << "No database selected\n";
-                continue;
-            }
-
-            std::string table_name = args[2];
-
-            Table_val tv = parse_insert_values_query(input);
-
-            if (insert_values(db_ctx.current_database, table_name, tv)) {
-                std::cout << "1 row inserted\n";
-            } 
-            else {
-                std::cerr << "Insert failed\n";
-            }
+            execute_insert(input);
         }
-
-        else if (cmd == "drop" && args.size() >= 3 && args[1] == "database") {
-            if (drop_database(args[2])) {
-                std::cout << "Database dropped\n";
-            } 
-            else {
-                std::cerr << "Failed to drop database\n";
-            }
+        else if (cmd == "select") {
+            execute_select(input);
         }
-
+        else if (cmd == "drop") {
+            execute_drop(input);
+        }
         else {
             std::cerr << "Unknown command\n";
         }

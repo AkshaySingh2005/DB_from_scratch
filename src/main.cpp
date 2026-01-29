@@ -7,6 +7,7 @@
 
 #include "core/db_context.h"
 #include "query/query.h"
+#include "core/completion.h"
 
 namespace fs = std::filesystem;
 
@@ -33,6 +34,8 @@ int main() {
     std::cout << std::unitbuf;
     std::cerr << std::unitbuf;
 
+    setup_readline();
+
     std::cout << "Enter .help for usage hints.\n";
 
     while (true) {
@@ -41,6 +44,10 @@ int main() {
 
         std::string input(raw);
         free(raw);
+
+        if(!input.empty()){
+            add_history(input.c_str());
+        }
 
 
         // DOT COMMANDS //
@@ -92,6 +99,10 @@ int main() {
                 if (!found) {
                     std::cout << "no tables\n";
                 }
+            }
+
+            else if (input.rfind(".history", 0) == 0) {
+                history_cmd(input);
             }
 
             else {

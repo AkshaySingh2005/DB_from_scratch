@@ -8,6 +8,7 @@
 #include "core/db_context.h"
 #include "query/query.h"
 #include "core/completion.h"
+#include "page/page.h"
 
 namespace fs = std::filesystem;
 
@@ -34,6 +35,9 @@ int main() {
     std::cout << std::unitbuf;
     std::cerr << std::unitbuf;
 
+
+
+
     setup_readline();
 
     std::cout << "Enter .help for usage hints.\n";
@@ -48,6 +52,11 @@ int main() {
         if(!input.empty()){
             add_history(input.c_str());
         }
+
+
+
+
+
 
 
         // DOT COMMANDS //

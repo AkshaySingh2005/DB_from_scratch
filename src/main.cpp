@@ -53,6 +53,28 @@ int main() {
             add_history(input.c_str());
         }
 
+        // if(input == "page"){
+        //     Page p;
+        //     p.init(1);
+
+        //     int s0 = p.insert_tuple("hello", 6);
+        //     int s1 = p.insert_tuple("world", 6);
+
+        //     p.delete_tuple(s0);
+
+        //     auto t1 = p.read_tuple(s1);
+        //     std::cout << t1.data() << '\n'; 
+
+      
+        //     try {
+        //         p.read_tuple(s0);
+        //     } catch (const std::exception& e) {
+        //         std::cout << "Correctly failed to read deleted tuple\n";
+        //     }
+
+
+        // }
+
 
 
 

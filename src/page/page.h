@@ -85,6 +85,78 @@ public:
         return get_free_space() >= (sizeof(Slot) + tuple_size);
     }
 
+    int insert_tuple(const void* tuple_data , uint16_t tuple_size){
+
+        PageHeader* h = header();
+
+        if(!can_fit(tuple_size)){
+            return -1; //page full
+        }
+        
+        //^  Remember we grow data backwards from the end of the page.
+        h->free_space_end -= tuple_size;
+        std::memcpy(data + h->free_space_end , tuple_data , tuple_size);
+
+        //^  Creata a new slot
+        Slot* slots = get_slot_array();
+        uint16_t slot_id = h->num_slots;
+
+        slots[slot_id].offset = h->free_space_end;
+        slots[slot_id].length = tuple_size;
+
+        //^  Update header
+        h->num_slots++;
+        h->free_space_start += sizeof(Slot);
+
+
+        return slot_id;
+        
+    }
+
+    std::vector<char> read_tuple(uint16_t slot_id) const {
+        const PageHeader* h  = reinterpret_cast<const PageHeader*>(data);
+
+        if(slot_id >= h->num_slots){
+            std::cout<<"Invalid slot id"<<std::endl;
+        }
+
+        const Slot* slots = reinterpret_cast<const Slot*>(data + sizeof(PageHeader)); 
+
+        const Slot& slot = slots[slot_id];
+
+        if(slot.is_deleted()){
+            std::cout<<"slot deleted"<<std::endl;
+        }
+
+        std::vector<char>result(slot.length);
+
+        std::memcpy(result.data() , data + slot.offset , slot.length);
+
+        return result;
+    }
+
+    bool delete_tuple(uint16_t slot_id) {
+        PageHeader* h = header();
+
+       
+        if (slot_id >= h->num_slots) {
+            return false; 
+        }
+
+        Slot* slots = get_slot_array();
+        Slot& slot = slots[slot_id];
+
+    
+        if (slot.is_deleted()) {
+            return false;
+        }
+        slot.mark_deleted();
+        return true;
+    }
+
+
+
+
     void print_info() const {
         const PageHeader* h = reinterpret_cast<const PageHeader*>(data);
         

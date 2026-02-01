@@ -85,33 +85,57 @@ public:
         return get_free_space() >= (sizeof(Slot) + tuple_size);
     }
 
-    int insert_tuple(const void* tuple_data , uint16_t tuple_size){
 
+    int insert_tuple(const void* tuple_data, uint16_t tuple_size) {
         PageHeader* h = header();
-
-        if(!can_fit(tuple_size)){
-            return -1; //page full
-        }
-        
-        //^  Remember we grow data backwards from the end of the page.
-        h->free_space_end -= tuple_size;
-        std::memcpy(data + h->free_space_end , tuple_data , tuple_size);
-
-        //^  Creata a new slot
         Slot* slots = get_slot_array();
+
+        
+        if (!can_fit(tuple_size)) {
+            return -1;
+        }
+
+        // Deleted Slot --> Reuse it  
+
+        for (uint16_t i = 0; i < h->num_slots; i++) {
+            if (slots[i].is_deleted()) {
+
+                h->free_space_end -= tuple_size;
+
+                std::memcpy(
+                    data + h->free_space_end,
+                    tuple_data,
+                    tuple_size
+                );
+
+                slots[i].offset = h->free_space_end;
+                slots[i].length = tuple_size;
+
+                return i; // reused slot_id
+            }
+        }
+
+
+        // No  Deleted Slot so create new slot
+        h->free_space_end -= tuple_size;
+
+        std::memcpy(
+            data + h->free_space_end,
+            tuple_data,
+            tuple_size
+        );
+
         uint16_t slot_id = h->num_slots;
 
         slots[slot_id].offset = h->free_space_end;
         slots[slot_id].length = tuple_size;
 
-        //^  Update header
         h->num_slots++;
         h->free_space_start += sizeof(Slot);
 
-
         return slot_id;
-        
     }
+
 
     std::vector<char> read_tuple(uint16_t slot_id) const {
         const PageHeader* h  = reinterpret_cast<const PageHeader*>(data);
@@ -153,6 +177,37 @@ public:
         slot.mark_deleted();
         return true;
     }
+
+    // Clean up -> move all the correct data to bottom (basically one side (contigous)) 
+    void cleanup_garbage(){
+        PageHeader* h = header();
+        Slot* slots = get_slot_array();
+
+        uint16_t write_ptr = PAGE_SIZE;
+
+        for(uint16_t i=0;i<h->num_slots;i++){
+            Slot& slot = slots[i];
+
+            if(slot.is_deleted()){
+                continue;
+            }
+            
+            write_ptr-= slot.length;
+
+            std::memmove(
+                data + write_ptr,
+                data + slot.offset,
+                slot.length
+            );
+            
+            slot.offset = write_ptr;
+        }
+
+        h->free_space_end = write_ptr;
+        h->free_space_start = sizeof(PageHeader) + h->num_slots * sizeof(Slot);
+    }
+
+
 
 
 

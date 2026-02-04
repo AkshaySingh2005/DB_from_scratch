@@ -10,6 +10,7 @@
 #include "core/completion.h"
 #include "page/page.h"
 #include "page/pager.h"
+#include "heap_table/heap_table.h"
 
 namespace fs = std::filesystem;
 
@@ -55,14 +56,26 @@ int main() {
         }
 
         if(input == "page"){
-            Pager pager("test1.db");
-            Page p = pager.read_page(0);
+            Pager pager("heap.db");
+            HeapTable table(pager);
 
-            auto t0 = p.read_tuple(0);
-            auto t1 = p.read_tuple(1);
+            std::string a = "Alice";
+            std::string b = "Bob";
+            std::string c = "Charlie";
 
-            std::cout << t0.data() << '\n';
-            std::cout << t1.data() << '\n';
+            table.insert(a.data(), a.size());
+            table.insert(b.data(), b.size());
+            table.insert(c.data(), c.size());
+
+            Page debug;
+            pager.read_page(0, debug);
+            debug.print_info();
+
+            auto rows = table.scan_all();
+
+            for (auto& r : rows) {
+                std::cout << std::string(r.begin(), r.end()) << '\n';
+            }
         }
 
         // DOT COMMANDS //

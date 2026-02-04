@@ -20,11 +20,11 @@ void Slot::mark_deleted() {
     length = 0;
 }
 
-
 Page::Page() {
     memset(data, 0, PAGE_SIZE);
     header()->Init();
 }
+
 
 PageHeader* Page::header() {
     return reinterpret_cast<PageHeader*>(data);
@@ -42,9 +42,19 @@ const Slot* Page::get_slot_array() const {
     return reinterpret_cast<const Slot*>(data + sizeof(PageHeader));
 }
 
+char* Page::get_data() {
+    return data;
+}
+
+const char* Page::get_data() const {
+    return data;
+}
+
 void Page::init(uint32_t page_id) {
     memset(data, 0, PAGE_SIZE);
+
     PageHeader* h = header();
+
     h->page_id = page_id;
     h->num_slots = 0;
     h->free_space_start = sizeof(PageHeader);
@@ -52,10 +62,18 @@ void Page::init(uint32_t page_id) {
 }
 
 size_t Page::get_free_space() const {
+
     const PageHeader* h = header();
+
     if (h->free_space_end <= h->free_space_start) return 0;
+
     return h->free_space_end - h->free_space_start;
 }
+
+uint16_t Page::get_num_slots() const {
+    return header()->num_slots;
+}
+
 
 bool Page::can_fit(size_t tuple_size) const {
     return get_free_space() >= (sizeof(Slot) + tuple_size);
@@ -80,6 +98,7 @@ int Page::insert_tuple(const void* tuple_data, uint16_t tuple_size) {
 
     
     h->free_space_end -= tuple_size;
+    
     memcpy(data + h->free_space_end, tuple_data, tuple_size);
 
     uint16_t slot_id = h->num_slots;
@@ -90,6 +109,7 @@ int Page::insert_tuple(const void* tuple_data, uint16_t tuple_size) {
 
     return slot_id;
 }
+
 
 std::vector<char> Page::read_tuple(uint16_t slot_id) const {
     const PageHeader* h = header();
@@ -114,6 +134,7 @@ bool Page::delete_tuple(uint16_t slot_id) {
     slots[slot_id].mark_deleted();
     return true;
 }
+
 
 void Page::cleanup_garbage() {
     PageHeader* h = header();

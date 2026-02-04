@@ -18,6 +18,7 @@ file(GLOB SRC_FILES
     src/core/*.cpp
     src/query/*.cpp
     src/parser/*.cpp
+    src/page/*.cpp
 )
 
 

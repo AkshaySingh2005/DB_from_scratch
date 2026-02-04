@@ -9,6 +9,7 @@
 #include "query/query.h"
 #include "core/completion.h"
 #include "page/page.h"
+#include "page/pager.h"
 
 namespace fs = std::filesystem;
 
@@ -53,22 +54,16 @@ int main() {
             add_history(input.c_str());
         }
 
-        // if(input == "page"){
-        // Page p;
-        // p.init(1);
+        if(input == "page"){
+            Pager pager("test1.db");
+            Page p = pager.read_page(0);
 
-        // int s0 = p.insert_tuple("A", 2);
-        // int s1 = p.insert_tuple("B", 2);
-        // int s2 = p.insert_tuple("C", 2);
+            auto t0 = p.read_tuple(0);
+            auto t1 = p.read_tuple(1);
 
-        // p.delete_tuple(s1);
-
-        // int s3 = p.insert_tuple("D", 2);
-
-        // std::cout << "Reused slot id: " << s3 << '\n';
-
-
-        // }
+            std::cout << t0.data() << '\n';
+            std::cout << t1.data() << '\n';
+        }
 
         // DOT COMMANDS //
 

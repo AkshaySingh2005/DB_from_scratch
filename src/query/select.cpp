@@ -1,22 +1,23 @@
 #include "query.h"
-#include "../core/db_context.h"
+#include "../context/db_context.h"
 #include "../parser/parser.h"
 #include "../core/metadata.h"
-#include "../core/row_reader.h"
+#include "../core/tuple_encoder.h"
+#include "../page/pager.h"
+#include "../heap_table/heap_table.h"
 #include <iostream>
 #include <unordered_set>
 
-
 void execute_select(const std::string& sql) {
 
-    if(db_ctx.current_database.empty()){
+    if (db_ctx.current_database.empty()) {
         std::cerr << "No database selected\n";
         return;
     }
 
     SelectQuery sq;
 
-    try{
+    try {
         sq = parse_select_query(sql);
     }
     catch (const std::exception& e) {
@@ -24,27 +25,27 @@ void execute_select(const std::string& sql) {
         return;
     }
 
-    // load metadata
+    // Load metadata
+    
     Table_info ti;
-    try{
-        ti = load_table_metadata(db_ctx.current_database,sq.table_name);
+    try {
+        ti = load_table_metadata(db_ctx.current_database, sq.table_name);
     }
     catch (const std::exception& e) {
         std::cerr << e.what() << '\n';
         return;
     }
 
+    // Determine column indexes
     std::vector<size_t> col_indexes;
-    
-    // SELECT *
 
+    // SELECT *
     if (sq.columns.size() == 1 && sq.columns[0] == "*") {
         for (size_t i = 0; i < ti.attributes.size(); i++) {
             col_indexes.push_back(i);
         }
     }
     // SELECT col1, col2
-
     else {
         for (const auto& col : sq.columns) {
             bool found = false;
@@ -53,7 +54,7 @@ void execute_select(const std::string& sql) {
                 if (ti.attributes[i].first == col) {
                     col_indexes.push_back(i);
                     found = true;
-                    break;   
+                    break;
                 }
             }
 
@@ -64,14 +65,31 @@ void execute_select(const std::string& sql) {
         }
     }
 
-    
-    auto rows = read_all_rows(db_ctx.current_database, ti);
+    // Open table storage using HeapTable
+    std::string db_file =
+        "../data/" + db_ctx.current_database +
+        "/" + sq.table_name +
+        "/" + sq.table_name + ".db";
 
-  
-    for (const auto& row : rows) {
+    Pager pager(db_file);
+    HeapTable heap_table(pager);
+
+    auto tuples = heap_table.scan_all();
+
+    // Print header
+    for (size_t idx : col_indexes) {
+        std::cout << ti.attributes[idx].first << " ";
+    }
+    std::cout << "\n";
+
+    // Print rows
+    for (const auto& tuple : tuples) {
+        auto values = decode_row(tuple);
+
         for (size_t idx : col_indexes) {
-            std::cout << row.values[idx] << " ";
+            if (idx < values.size())
+                std::cout << values[idx] << " ";
         }
-        std::cout << '\n';
+        std::cout << "\n";
     }
 }

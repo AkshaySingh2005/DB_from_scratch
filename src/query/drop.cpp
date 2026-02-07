@@ -1,6 +1,6 @@
 #include "query.h"
 #include "../core/metadata.h"
-#include "../core/db_context.h"
+#include "../context/db_context.h"
 #include "../parser/parser.h"
 #include <iostream>
 

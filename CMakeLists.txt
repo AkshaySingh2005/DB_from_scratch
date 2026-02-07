@@ -20,6 +20,8 @@ file(GLOB SRC_FILES
     src/parser/*.cpp
     src/page/*.cpp
     src/heap_table/*.cpp
+    src/context/*.cpp
+    src/gnu_readline/*.cpp
 )
 
 

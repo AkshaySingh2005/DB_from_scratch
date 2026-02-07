@@ -5,9 +5,9 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-#include "core/db_context.h"
+#include "context/db_context.h"
 #include "query/query.h"
-#include "core/completion.h"
+#include "gnu_readline/completion.h"
 #include "page/page.h"
 #include "page/pager.h"
 #include "heap_table/heap_table.h"

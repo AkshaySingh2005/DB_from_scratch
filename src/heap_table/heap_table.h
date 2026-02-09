@@ -18,6 +18,7 @@ public:
     HeapTable(Pager& pager);
 
     RID insert(const void* data, uint16_t size);
+    bool delete_tuple(const RID& rid);
     std::vector<std::vector<char>> scan_all();
 
     std::vector<RowRef> scan_with_rid();   

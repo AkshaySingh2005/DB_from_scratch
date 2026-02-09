@@ -13,6 +13,7 @@
 #include "heap_table/heap_table.h"
 #include "core/tuple_encoder.h"
 
+
 namespace fs = std::filesystem;
 
 
@@ -174,6 +175,9 @@ int main() {
         }
         else if (cmd == "drop") {
             execute_drop(input);
+        }
+        else if (cmd == "delete"){
+            execute_delete(input);
         }
         else {
             std::cerr << "Unknown command\n";

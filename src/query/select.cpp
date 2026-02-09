@@ -8,33 +8,6 @@
 #include <iostream>
 #include <unordered_set>
 
-bool eval_condn(const std::string& lhs , const std::string& op , const std::string& rhs){
-    if(op == "="){
-        return lhs==rhs;
-    }
-
-    if(op == "!=" || op == "<>"){
-        return lhs!=rhs;
-    }
-
-    double left = std::stod(lhs);
-    double right = std::stod(rhs);
-
-    if (op == "<")
-        return left < right;
-
-    if (op == ">")
-        return left > right;
-
-    if (op == "<=")
-        return left <= right;
-
-    if (op == ">=")
-        return left >= right;
-
-    return false;
-
-}
 
 void execute_select(const std::string& sql) {
 

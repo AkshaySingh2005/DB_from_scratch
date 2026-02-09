@@ -38,6 +38,25 @@ RID HeapTable::insert(const void* data, uint16_t size) {
     return RID{new_p_id, static_cast<uint16_t>(s_id)};
 }
 
+bool HeapTable::delete_tuple(const RID& rid){
+    Page page;
+    
+    //  Page object in RAM RID = (0, 2) page = 0 and slot = 2
+    if(!pager.read_page(rid.page_id , page)){
+        return false;
+    }
+    
+    // Delete the slot inside the page -> Slot[2] → marked as deleted
+    if(!page.delete_tuple(rid.slot_id)){
+        return false;
+    }
+
+    //write page 0 back to disk 
+    pager.write_page(rid.page_id,page);
+
+    return true;
+}
+
 
 
 std::vector<std::vector<char>> HeapTable::scan_all() {

@@ -130,6 +130,57 @@ SelectQuery parse_select_query(const std::string &input){
     return sq;
 }
 
+//DELETE FROM marks WHERE id = 2;
+
+DeleteQuery parse_delete_query(const std::string& input){
+    DeleteQuery dq;
+
+    auto v = parse_args(input);
+    
+    int from_idx = -1 , where_idx = -1 ;
+
+    for(int i=0;i<v.size();i++){
+        if(v[i] == "from") from_idx = i;
+        if(v[i] == "where") where_idx = i;
+    }
+
+    if(from_idx == -1 || from_idx + 1 >= v.size()){
+        throw std::runtime_error("Invalid SELECT syntax");
+    }
+
+    dq.table_name = v[from_idx + 1];
+     
+    // remove semicolon
+    if (!dq.table_name.empty() && dq.table_name.back() == ';'){
+        dq.table_name.pop_back();
+    }
+
+    // WHERE clause
+    if (where_idx != -1) {
+        if (where_idx + 3 >= v.size())
+            throw std::runtime_error("Invalid WHERE clause");
+
+        dq.where.exits = true;
+        dq.where.column = v[where_idx + 1];
+        dq.where.op     = v[where_idx + 2];
+        dq.where.value  = v[where_idx + 3];
+
+        // remove quotes
+        if (!dq.where.value.empty() &&
+            dq.where.value.front() == '"' &&
+            dq.where.value.back() == '"') {
+            dq.where.value = dq.where.value.substr(1, dq.where.value.size() - 2);
+        }
+
+        // remove semicolon
+        if (!dq.where.value.empty() && dq.where.value.back() == ';')
+            dq.where.value.pop_back();
+    }
+
+    return dq;
+
+}
+
 
 
 

@@ -5,14 +5,22 @@
 #include "rid.h"
 #include <vector>
 
-class HeapTable {
-    private:
-       Pager& pager;
-    public:
-       HeapTable(Pager& pager);
-       
-       RID insert(const void* data , uint16_t size);
-
-       std::vector<std::vector<char>> scan_all();
+struct RowRef {
+    RID rid;
+    std::vector<char> data;
 };
+
+class HeapTable {
+private:
+    Pager& pager;
+
+public:
+    HeapTable(Pager& pager);
+
+    RID insert(const void* data, uint16_t size);
+    std::vector<std::vector<char>> scan_all();
+
+    std::vector<RowRef> scan_with_rid();   
+};
+
 

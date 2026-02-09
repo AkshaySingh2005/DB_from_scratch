@@ -11,6 +11,7 @@
 #include "page/page.h"
 #include "page/pager.h"
 #include "heap_table/heap_table.h"
+#include "core/tuple_encoder.h"
 
 namespace fs = std::filesystem;
 
@@ -59,22 +60,35 @@ int main() {
             Pager pager("heap.db");
             HeapTable table(pager);
 
-            std::string a = "Alice";
-            std::string b = "Bob";
-            std::string c = "Charlie";
+            std::vector<std::string> row1 = {"1", "Alice", "Math"};
+            std::vector<std::string> row2 = {"2", "Bob", "Science"};
+            std::vector<std::string> row3 = {"3", "Charlie", "English"};
 
-            table.insert(a.data(), a.size());
-            table.insert(b.data(), b.size());
-            table.insert(c.data(), c.size());
+            auto t1 = encode_row(row1);
+            auto t2 = encode_row(row2);
+            auto t3 = encode_row(row3);
+
+            table.insert(t1.data(), t1.size());
+            table.insert(t2.data(), t2.size());
+            table.insert(t3.data(), t3.size());
 
             Page debug;
             pager.read_page(0, debug);
             debug.print_info();
 
-            auto rows = table.scan_all();
+            // auto rows = table.scan_all();
+            auto rows = table.scan_with_rid();
 
             for (auto& r : rows) {
-                std::cout << std::string(r.begin(), r.end()) << '\n';
+                std::cout << "RID: (" 
+                        << r.rid.page_id << ", "
+                        << r.rid.slot_id << ") -> ";
+
+                auto values = decode_row(r.data);
+                for (auto& v : values)
+                    std::cout << v << " ";
+
+                std::cout << "\n";
             }
         }
 

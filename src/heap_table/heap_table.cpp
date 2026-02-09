@@ -4,7 +4,6 @@
 HeapTable::HeapTable(Pager& pager) : pager(pager) {}
 
 
-
 RID HeapTable::insert(const void* data, uint16_t size) {
 
     // Try existing pages
@@ -61,3 +60,31 @@ std::vector<std::vector<char>> HeapTable::scan_all() {
 
     return res;
 }
+
+std::vector<RowRef> HeapTable::scan_with_rid() {
+    std::vector<RowRef> result;
+
+    for (uint32_t p_id = 0; p_id < pager.get_total_pages(); ++p_id) {
+        Page page;
+
+        if (!pager.read_page(p_id, page))
+            continue;
+
+        uint16_t num_slots = page.get_num_slots();
+
+        for (uint16_t s_id = 0; s_id < num_slots; ++s_id) {
+            auto tuple = page.read_tuple(s_id);
+
+            if (!tuple.empty()) {
+                RowRef ref;
+                ref.rid = RID{p_id, s_id};
+                ref.data = std::move(tuple);
+
+                result.push_back(std::move(ref));
+            }
+        }
+    }
+
+    return result;
+}
+

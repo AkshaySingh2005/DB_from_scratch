@@ -1,6 +1,5 @@
 #include "query.h"
 #include "../context/db_context.h"
-#include "../core/storage.h"
 #include "../core/tuple_encoder.h"
 #include "../parser/parser.h"
 #include "../page/pager.h"

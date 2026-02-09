@@ -12,9 +12,17 @@ struct Table_val {
     std::vector<std::string> values;
 };
 
+struct WhereClause {
+    bool exits = false;
+    std::string column;
+    std::string op;
+    std::string value;
+};
+
 struct SelectQuery {
     std::string table_name;
-    std::vector<std::string> columns; 
+    std::vector<std::string> columns;
+    WhereClause where ; 
 };
 
 

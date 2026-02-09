@@ -8,6 +8,34 @@
 #include <iostream>
 #include <unordered_set>
 
+bool eval_condn(const std::string& lhs , const std::string& op , const std::string& rhs){
+    if(op == "="){
+        return lhs==rhs;
+    }
+
+    if(op == "!=" || op == "<>"){
+        return lhs!=rhs;
+    }
+
+    double left = std::stod(lhs);
+    double right = std::stod(rhs);
+
+    if (op == "<")
+        return left < right;
+
+    if (op == ">")
+        return left > right;
+
+    if (op == "<=")
+        return left <= right;
+
+    if (op == ">=")
+        return left >= right;
+
+    return false;
+
+}
+
 void execute_select(const std::string& sql) {
 
     if (db_ctx.current_database.empty()) {
@@ -71,6 +99,7 @@ void execute_select(const std::string& sql) {
         "/" + sq.table_name +
         "/" + sq.table_name + ".db";
 
+
     Pager pager(db_file);
     HeapTable heap_table(pager);
 
@@ -86,10 +115,31 @@ void execute_select(const std::string& sql) {
     for (const auto& tuple : tuples) {
         auto values = decode_row(tuple);
 
-        for (size_t idx : col_indexes) {
-            if (idx < values.size())
-                std::cout << values[idx] << " ";
+        if(sq.where.exits){
+            bool matched = false;
+
+            for(size_t i=0;i<ti.attributes.size();i++){
+                if(ti.attributes[i].first == sq.where.column){
+                    if(i < values.size()){
+                        matched = eval_condn(
+                            values[i],
+                            sq.where.op,
+                            sq.where.value
+                        );
+                    }
+                    break;
+                }
+            }
+
+            if(!matched){
+                continue;
+            }
         }
-        std::cout << "\n";
+
+        for (size_t idx : col_indexes) {
+           if (idx < values.size())
+            std::cout << values[idx] << " ";
+        }
+        std::cout << "\n";   
     }
 }

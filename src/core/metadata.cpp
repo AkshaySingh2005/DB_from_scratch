@@ -47,7 +47,6 @@ bool create_table(const std::string& db, const std::string& table, const std::ve
         j["columns"].push_back({{"name", a.first}, {"type", a.second}});
 
     std::ofstream(dir / (table + ".meta.json")) << j.dump(4);
-    std::ofstream(dir / (table + ".bin"), std::ios::binary);
     return true;
 }
 

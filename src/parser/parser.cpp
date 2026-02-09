@@ -60,16 +60,23 @@ Table_val parse_insert_values_query(const std::string& input) {
 // select * from exam ;
 // select id,class from exam ;
 
+// select * from marks where id = 2;
+// select * from marks where id > 1;
+// select name from marks where id <= 2;
+// select * from marks where id != 1;
+
+
 SelectQuery parse_select_query(const std::string &input){
     SelectQuery sq;
 
     auto v = parse_args(input);
 
-    int id1 = -1 , id2 = -1;
+    int id1 = -1 , id2 = -1 , where_pos = -1 ;
 
     for(int i=0;i<v.size();i++){
         if(v[i] == "select") id1 = i;
         if(v[i] == "from") id2 = i;
+        if(v[i] == "where") where_pos = i;
     }
 
     if(id1 == -1 || id2 == -1 || id2 <= id1){
@@ -77,6 +84,7 @@ SelectQuery parse_select_query(const std::string &input){
     }
 
     sq.table_name = v[id2 + 1];
+
     if(!sq.table_name.empty() && sq.table_name.back() == ';'){
         sq.table_name.pop_back();
     }
@@ -88,17 +96,37 @@ SelectQuery parse_select_query(const std::string &input){
 
     if(cols == "*"){
         sq.columns.push_back("*");
-        return sq;
+    }
+    else{
+        std::stringstream ss(cols);
+        std::string token;
+
+        while (std::getline(ss, token, ',')) {
+            token = trim(token);
+            sq.columns.push_back(token);
+        }
     }
 
-    std::stringstream ss(cols);
-    std::string token;
+    if(where_pos != -1){
+        if(where_pos + 3 >= v.size()){
+            throw std::runtime_error("Invalid WHERE clause");
+        }
 
-    while (std::getline(ss, token, ',')) {
-        token = trim(token);
-        sq.columns.push_back(token);
+        sq.where.exits = true;
+        sq.where.column = v[where_pos+1];
+        sq.where.op     = v[where_pos + 2];
+        sq.where.value = v[where_pos+3];
+        
+        // remove quotes
+        if(!sq.where.value.empty() && sq.where.value.front() == '"' && sq.where.value.back() == '"'){
+            sq.where.value = sq.where.value.substr(1, sq.where.value.size() - 2);
+        }
+
+        if(!sq.where.value.empty() && sq.where.value.back() == ';'){
+            sq.where.value.pop_back();
+        }
+
     }
-
     return sq;
 }
 

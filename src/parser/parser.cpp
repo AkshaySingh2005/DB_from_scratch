@@ -112,7 +112,7 @@ SelectQuery parse_select_query(const std::string &input){
             throw std::runtime_error("Invalid WHERE clause");
         }
 
-        sq.where.exits = true;
+        sq.where.exists = true;
         sq.where.column = v[where_pos+1];
         sq.where.op     = v[where_pos + 2];
         sq.where.value = v[where_pos+3];
@@ -160,7 +160,7 @@ DeleteQuery parse_delete_query(const std::string& input){
         if (where_idx + 3 >= v.size())
             throw std::runtime_error("Invalid WHERE clause");
 
-        dq.where.exits = true;
+        dq.where.exists = true;
         dq.where.column = v[where_idx + 1];
         dq.where.op     = v[where_idx + 2];
         dq.where.value  = v[where_idx + 3];
@@ -178,6 +178,82 @@ DeleteQuery parse_delete_query(const std::string& input){
     }
 
     return dq;
+
+}
+
+// UPDATE Customers
+// SET ContactName = 'Alfred Schmidt', City= 'Frankfurt'
+// WHERE CustomerID = 1;
+
+UpdateQuery parse_update_query(const std::string& input){
+
+    UpdateQuery uq;
+
+    auto v = parse_args(input);
+
+    int update_idx = -1 , set_idx = -1 , where_idx = -1;
+
+    for(int i=0 ;i< v.size();i++){
+        if(v[i]=="update") update_idx = i;
+        if(v[i]=="set") set_idx = i;
+        if(v[i]=="where") where_idx = i;
+    }
+
+    if(update_idx == -1 || set_idx == -1){
+        throw std::runtime_error("Invalid UPDATE syntax");
+    }
+
+    uq.table_name = v[update_idx+1];
+
+    int eos = (where_idx != -1) ? where_idx : v.size();
+    
+    std::string set_clause;
+
+    for (int i = set_idx + 1; i < eos; i++) {
+        set_clause += v[i] + " ";
+    }
+
+    std::stringstream ss(set_clause);
+    std::string token;
+
+    while(std::getline(ss,token,',')){
+        size_t eq_pos = token.find('=');
+
+        if(eq_pos != std::string::npos){
+            std::string col = trim(token.substr(0,eq_pos));
+            std::string val  = trim(token.substr(eq_pos+1));
+
+            if(val.front() == '"' && val.back() == '"'){
+                  val = val.substr(1,val.size() - 2);
+            }
+
+            uq.new_val.push_back({col,val}); 
+        }
+    }
+
+
+    if (where_idx != -1) {
+        if (where_idx + 3 >= v.size())
+            throw std::runtime_error("Invalid WHERE clause");
+
+        uq.where.exists = true;
+        uq.where.column = v[where_idx + 1];
+        uq.where.op     = v[where_idx + 2];
+        uq.where.value  = v[where_idx + 3];
+
+        // remove quotes
+        if (!uq.where.value.empty() &&
+            uq.where.value.front() == '"' &&
+            uq.where.value.back() == '"') {
+            uq.where.value = uq.where.value.substr(1, uq.where.value.size() - 2);
+        }
+
+        // remove semicolon
+        if (!uq.where.value.empty() && uq.where.value.back() == ';')
+            uq.where.value.pop_back();
+    }
+
+    return uq;
 
 }
 

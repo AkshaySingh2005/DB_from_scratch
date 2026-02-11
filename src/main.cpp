@@ -179,6 +179,9 @@ int main() {
         else if (cmd == "delete"){
             execute_delete(input);
         }
+        else if (cmd == "update"){
+            execute_update(input);
+        }
         else {
             std::cerr << "Unknown command\n";
         }

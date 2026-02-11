@@ -13,7 +13,7 @@ struct Table_val {
 };
 
 struct WhereClause {
-    bool exits = false;
+    bool exists = false;
     std::string column;
     std::string op;
     std::string value;
@@ -30,6 +30,12 @@ struct DeleteQuery {
     WhereClause where;
 };
 
+struct UpdateQuery {
+    std::string table_name;
+    std::vector<std::pair<std::string, std::string>> new_val;
+    WhereClause where;
+};
+
 
 std::vector<std::string> parse_args(const std::string& input);
 
@@ -37,5 +43,6 @@ Table_info parse_create_table_query(const std::string& input);
 Table_val  parse_insert_values_query(const std::string& input);
 SelectQuery parse_select_query(const std::string& input);
 DeleteQuery parse_delete_query(const std::string& input);
+UpdateQuery parse_update_query(const std::string& input);
 
 std::string trim(const std::string& s);

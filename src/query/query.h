@@ -35,3 +35,4 @@ void execute_select(const std::string& sql);
 void execute_drop(const std::string& sql);
 void execute_use(const std::string& sql);
 void execute_delete(const std::string sql);
+void execute_update(const std::string sql);

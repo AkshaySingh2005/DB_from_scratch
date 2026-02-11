@@ -88,7 +88,7 @@ void execute_select(const std::string& sql) {
     for (const auto& tuple : tuples) {
         auto values = decode_row(tuple);
 
-        if(sq.where.exits){
+        if(sq.where.exists){
             bool matched = false;
 
             for(size_t i=0;i<ti.attributes.size();i++){

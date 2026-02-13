@@ -77,13 +77,14 @@ void execute_update(const std::string sql){
                 }
             }
         }
+       
+        table.delete_tuple(row.rid);
 
         auto new_tuple = encode_row(value);
 
-        if(table.delete_tuple(row.rid)){
-            table.insert(new_tuple.data(),new_tuple.size());
-            updated++;
-        }
+        table.insert(new_tuple.data(), new_tuple.size());
+
+        updated++;
 
 
 

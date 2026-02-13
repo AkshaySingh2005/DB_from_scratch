@@ -21,6 +21,13 @@ void execute_use(const std::string& sql) {
         return;
     }
 
+    if (db_ctx.buffer) {
+        db_ctx.buffer->flush_all();
+    }
+
+    db_ctx.buffer.reset();
+    db_ctx.pager.reset();
+
     db_ctx.current_database = db_name;
     std::cout << "Using database : '" << db_name << "'\n";
 }

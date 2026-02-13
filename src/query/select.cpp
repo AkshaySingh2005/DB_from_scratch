@@ -5,6 +5,7 @@
 #include "../core/tuple_encoder.h"
 #include "../page/pager.h"
 #include "../heap_table/heap_table.h"
+#include "../core/storage_manager.h"
 #include <iostream>
 #include <unordered_set>
 
@@ -67,16 +68,12 @@ void execute_select(const std::string& sql) {
     }
 
     // Open table storage using HeapTable
-    std::string db_file =
-        "../data/" + db_ctx.current_database +
-        "/" + sq.table_name +
-        "/" + sq.table_name + ".db";
+    open_table_storage(sq.table_name);
 
 
-    Pager pager(db_file);
-    HeapTable heap_table(pager);
+    HeapTable table(*db_ctx.buffer);;
 
-    auto tuples = heap_table.scan_all();
+    auto tuples = table.scan_all();
 
     // Print header
     for (size_t idx : col_indexes) {

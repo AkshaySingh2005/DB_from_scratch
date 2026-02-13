@@ -5,6 +5,7 @@
 #include "../heap_table/heap_table.h"
 #include "../page/pager.h"
 #include "../core/tuple_encoder.h"
+#include "../core/storage_manager.h"
 #include <iostream>
 
 void execute_update(const std::string sql){
@@ -34,12 +35,9 @@ void execute_update(const std::string sql){
         return;
     }
 
-    std::string db_file =
-    "../data/" + db_ctx.current_database + "/" +
-    uq.table_name + "/" + uq.table_name + ".db";
+    open_table_storage(uq.table_name);
+    HeapTable table(*db_ctx.buffer);
 
-    Pager pager(db_file);
-    HeapTable table(pager);
 
     int updated = 0;
 
@@ -91,6 +89,7 @@ void execute_update(const std::string sql){
 
     }  
     
+    db_ctx.buffer->flush_all();
     std::cout << updated << " row(s) updated\n";
 
 

@@ -2,6 +2,7 @@
 
 #include "page/pager.h"
 #include "page/page.h"
+#include "buffer_pool/buffer_pool.h"
 #include "rid.h"
 #include <vector>
 
@@ -12,10 +13,10 @@ struct RowRef {
 
 class HeapTable {
 private:
-    Pager& pager;
+    BufferPool& buffer;
 
 public:
-    HeapTable(Pager& pager);
+    HeapTable(BufferPool& buffer);
 
     RID insert(const void* data, uint16_t size);
     bool delete_tuple(const RID& rid);

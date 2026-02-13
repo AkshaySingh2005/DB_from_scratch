@@ -34,5 +34,9 @@ class BufferPool {
         void mark_dirty(uint32_t page_id);
 
         void flush_all();
+
+        Pager& get_pager() { return pager; }
+
+
 };
 

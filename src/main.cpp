@@ -59,17 +59,30 @@ int main() {
         }
 
         if(input == "page"){
-            Pager pager("buffer.db");
-            BufferPool buffer(pager,2);
+            Pager pager("heap1.db");
+            BufferPool buffer(pager, 2);
+            HeapTable table(buffer);
 
-            uint32_t p0 = buffer.allocate_page();
-            uint32_t p1 = buffer.allocate_page();
+            std::vector<std::string> row1 = {"1", "Alice", "Math"};
+            std::vector<std::string> row2 = {"2", "Bob", "Science"};
+            std::vector<std::string> row3 = {"3", "Charlie", "English"};
 
-            Page& page0 = buffer.fetch_page(p0);
-            page0.insert_tuple("Alice", 5);
-            buffer.mark_dirty(p0);
+            auto t1 = encode_row(row1);
+            auto t2 = encode_row(row2);
+            auto t3 = encode_row(row3);
+
+            table.insert(t1.data(), t1.size());
+            table.insert(t2.data(), t2.size());
+            table.insert(t3.data(), t3.size());
+
+            auto rows = table.scan_all();
+
+            for (auto& r : rows) {
+                std::cout << std::string(r.begin(), r.end()) << "\n";
+            }
 
             buffer.flush_all();
+
             
 
             // Pager pager("buffer.db");
@@ -111,7 +124,13 @@ int main() {
 
         if (input[0] == '.') {
 
-            if (input == ".exit") break;
+            if (input == ".exit") {
+                if (db_ctx.buffer) {
+                    db_ctx.buffer->flush_all();
+                }
+                break;
+            }
+
 
             else if (input == ".help") {
                 print_help();
@@ -199,6 +218,10 @@ int main() {
         else {
             std::cerr << "Unknown command\n";
         }
+    }
+
+    if (db_ctx.buffer) {
+        db_ctx.buffer->flush_all();
     }
 
     return 0;

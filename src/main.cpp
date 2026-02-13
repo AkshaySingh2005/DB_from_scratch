@@ -12,6 +12,7 @@
 #include "page/pager.h"
 #include "heap_table/heap_table.h"
 #include "core/tuple_encoder.h"
+#include "buffer_pool/buffer_pool.h"
 
 
 namespace fs = std::filesystem;
@@ -58,39 +59,52 @@ int main() {
         }
 
         if(input == "page"){
-            Pager pager("heap.db");
-            HeapTable table(pager);
+            Pager pager("buffer.db");
+            BufferPool buffer(pager,2);
 
-            std::vector<std::string> row1 = {"1", "Alice", "Math"};
-            std::vector<std::string> row2 = {"2", "Bob", "Science"};
-            std::vector<std::string> row3 = {"3", "Charlie", "English"};
+            uint32_t p0 = buffer.allocate_page();
+            uint32_t p1 = buffer.allocate_page();
 
-            auto t1 = encode_row(row1);
-            auto t2 = encode_row(row2);
-            auto t3 = encode_row(row3);
+            Page& page0 = buffer.fetch_page(p0);
+            page0.insert_tuple("Alice", 5);
+            buffer.mark_dirty(p0);
 
-            table.insert(t1.data(), t1.size());
-            table.insert(t2.data(), t2.size());
-            table.insert(t3.data(), t3.size());
+            buffer.flush_all();
+            
 
-            Page debug;
-            pager.read_page(0, debug);
-            debug.print_info();
+            // Pager pager("buffer.db");
+            // HeapTable table(pager);
 
-            // auto rows = table.scan_all();
-            auto rows = table.scan_with_rid();
+            // std::vector<std::string> row1 = {"1", "Alice", "Math"};
+            // std::vector<std::string> row2 = {"2", "Bob", "Science"};
+            // std::vector<std::string> row3 = {"3", "Charlie", "English"};
 
-            for (auto& r : rows) {
-                std::cout << "RID: (" 
-                        << r.rid.page_id << ", "
-                        << r.rid.slot_id << ") -> ";
+            // auto t1 = encode_row(row1);
+            // auto t2 = encode_row(row2);
+            // auto t3 = encode_row(row3);
 
-                auto values = decode_row(r.data);
-                for (auto& v : values)
-                    std::cout << v << " ";
+            // table.insert(t1.data(), t1.size());
+            // table.insert(t2.data(), t2.size());
+            // table.insert(t3.data(), t3.size());
 
-                std::cout << "\n";
-            }
+            // Page debug;
+            // pager.read_page(0, debug);
+            // debug.print_info();
+
+            // // auto rows = table.scan_all();
+            // auto rows = table.scan_with_rid();
+
+            // for (auto& r : rows) {
+            //     std::cout << "RID: (" 
+            //             << r.rid.page_id << ", "
+            //             << r.rid.slot_id << ") -> ";
+
+            //     auto values = decode_row(r.data);
+            //     for (auto& v : values)
+            //         std::cout << v << " ";
+
+            //     std::cout << "\n";
+            // }
         }
 
         // DOT COMMANDS //

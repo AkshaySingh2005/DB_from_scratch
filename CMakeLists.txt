@@ -22,6 +22,7 @@ file(GLOB SRC_FILES
     src/heap_table/*.cpp
     src/context/*.cpp
     src/gnu_readline/*.cpp
+    src/buffer_pool/*.cpp
 )
 
 

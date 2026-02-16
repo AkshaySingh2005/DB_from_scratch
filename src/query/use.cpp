@@ -8,7 +8,7 @@
 void execute_use(const std::string& sql) {
     auto args = parse_args(sql);
 
-    if (args.size() != 2) {
+    if (args.size() < 2) {
         std::cerr << "Invalid USE syntax. Use:\n"
                   << "use <database>\n";
         return;
@@ -29,5 +29,6 @@ void execute_use(const std::string& sql) {
     db_ctx.pager.reset();
 
     db_ctx.current_database = db_name;
+    
     std::cout << "Using database : '" << db_name << "'\n";
 }

@@ -85,9 +85,6 @@ void execute_update(const std::string sql){
         table.insert(new_tuple.data(), new_tuple.size());
 
         updated++;
-
-
-
     }  
     
     db_ctx.buffer->flush_all();

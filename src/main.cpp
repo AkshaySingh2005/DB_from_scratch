@@ -131,7 +131,16 @@ int main() {
                 break;
             }
 
-
+            else if(input.substr(0, 6) == ".clear"){
+                // Just use system clear - it's the most reliable
+                #ifdef _WIN32
+                    system("cls");
+                #else
+                    system("clear");
+                #endif
+                continue;
+            }
+            
             else if (input == ".help") {
                 print_help();
             }

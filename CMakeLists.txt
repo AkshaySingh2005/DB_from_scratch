@@ -7,6 +7,15 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+include(FetchContent)
+ 
+FetchContent_Declare(ftxui
+  GIT_REPOSITORY https://github.com/ArthurSonzogni/FTXUI
+  GIT_TAG v6.1.9  # Replace with a version, tag, or commit hash
+)
+ 
+FetchContent_MakeAvailable(ftxui)
+
 # Build type (default to Debug)
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
@@ -23,6 +32,7 @@ file(GLOB SRC_FILES
     src/context/*.cpp
     src/gnu_readline/*.cpp
     src/buffer_pool/*.cpp
+
 )
 
 
@@ -35,6 +45,11 @@ target_include_directories(shell PRIVATE
 )
 
 # Link readline
-target_link_libraries(shell PRIVATE readline)
+target_link_libraries(shell PRIVATE 
+    readline
+    ftxui::screen
+    ftxui::dom
+    ftxui::component
+)
 
 
